@@ -65,6 +65,49 @@ src/
     └── weather-icon.tsx       # Weather icons (Client Component)
 ```
 
+## Docker
+
+### Pull from GitHub Container Registry
+
+```bash
+docker pull ghcr.io/rarrifano/weather-sp:latest
+```
+
+### Run with environment variable
+
+```bash
+docker run -p 3000:3000 -e OPENWEATHER_API_KEY=your_key_here ghcr.io/rarrifano/weather-sp:latest
+```
+
+### Run with env file
+
+```bash
+# Create .env.local with your API key
+echo "OPENWEATHER_API_KEY=your_key_here" > .env.local
+
+docker run -p 3000:3000 --env-file .env.local ghcr.io/rarrifano/weather-sp:latest
+```
+
+### Docker Compose
+
+```bash
+# Make sure .env.local exists with OPENWEATHER_API_KEY
+docker compose up --build
+```
+
+Or use the pre-built image:
+
+```yaml
+# docker-compose.yml
+services:
+  app:
+    image: ghcr.io/rarrifano/weather-sp:latest
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
+```
+
 ## License
 
 GPL-2.0
