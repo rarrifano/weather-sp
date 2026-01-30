@@ -67,4 +67,4 @@ src/
 
 ## License
 
-MIT
+GPL-2.0
