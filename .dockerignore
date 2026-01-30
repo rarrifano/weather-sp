@@ -1,0 +1,24 @@
+# Dependencies
+node_modules
+
+# Build output
+.next
+
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Env files (use runtime env vars instead)
+.env*
+!.env.example
+
+# Misc
+README.md
+LICENSE
+*.md
