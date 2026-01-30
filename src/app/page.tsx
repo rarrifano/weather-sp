@@ -1,6 +1,9 @@
 import { RegenerateButton } from "@/components/regenerate-button";
 import { WeatherIcon } from "@/components/weather-icon";
 
+// Force dynamic rendering at runtime (not build time)
+export const dynamic = "force-dynamic";
+
 type WeatherCondition = "rain" | "clear" | "clouds" | "thunderstorm" | "unknown";
 
 interface WeatherData {
@@ -10,22 +13,36 @@ interface WeatherData {
 }
 
 async function getWeather(): Promise<WeatherData> {
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : "http://localhost:3000";
+  const apiKey = process.env.OPENWEATHER_API_KEY;
+
+  if (!apiKey) {
+    return {
+      condition: "unknown",
+      vibe: "The weather gods are silent. Try again later.",
+      temp: 0,
+    };
+  }
 
   try {
-    const res = await fetch(`${baseUrl}/api/weather`, {
-      cache: "no-store",
-    });
+    const response = await fetch(
+      `https://api.openweathermap.org/data/2.5/weather?q=São Paulo,BR&appid=${apiKey}&units=metric`,
+      { cache: "no-store" }
+    );
 
-    if (!res.ok) {
-      throw new Error("Failed to fetch weather");
+    if (!response.ok) {
+      throw new Error(`Weather API error: ${response.status}`);
     }
 
-    return res.json();
+    const data = await response.json();
+    const weatherCode = data.weather[0]?.id || 0;
+    const condition = mapWeatherCodeToCondition(weatherCode);
+
+    return {
+      condition,
+      vibe: VIBE_MAP[condition],
+      temp: Math.round(data.main.temp),
+    };
   } catch {
-    // Fallback for when API fails
     return {
       condition: "unknown",
       vibe: "The weather gods are silent. Try again later.",
@@ -33,6 +50,22 @@ async function getWeather(): Promise<WeatherData> {
     };
   }
 }
+
+function mapWeatherCodeToCondition(code: number): WeatherCondition {
+  if (code >= 200 && code < 300) return "thunderstorm";
+  if (code >= 300 && code < 600) return "rain";
+  if (code >= 800 && code < 801) return "clear";
+  if (code >= 801) return "clouds";
+  return "unknown";
+}
+
+const VIBE_MAP: Record<WeatherCondition, string> = {
+  rain: "Typical SP. Gray, wet, and miserable. Bring an umbrella or suffer.",
+  clear: "Wait, is that the sun? In São Paulo? Go outside before it disappears in 5 minutes.",
+  clouds: "The sky is a concrete slab. Very on-brand for the city.",
+  thunderstorm: "Maximum chaos mode. Stay inside and pray for the power grid.",
+  unknown: "Even the weather API doesn't know what's happening. Classic SP.",
+};
 
 const BG_CLASS_MAP: Record<WeatherCondition, string> = {
   rain: "bg-rain",

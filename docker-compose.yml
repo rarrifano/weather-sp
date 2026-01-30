@@ -1,4 +1,5 @@
 services:
+  # Local development - builds from source
   app:
     build: .
     ports:
@@ -6,3 +7,13 @@ services:
     env_file:
       - .env.local
     restart: unless-stopped
+
+  # Production - uses pre-built image
+  # Uncomment this and comment out 'app' above to use
+  # app-prod:
+  #   image: ghcr.io/rarrifano/weather-sp:latest
+  #   ports:
+  #     - "3000:3000"
+  #   env_file:
+  #     - .env.local
+  #   restart: unless-stopped
