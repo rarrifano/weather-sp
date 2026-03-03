@@ -1,5 +1,10 @@
 [tools]
 node = "22"
+terraform = "1.14"
+python = "3.13"       # Required for LocalStack CLI (awscli-local)
+"pipx:localstack" = "latest"
+"pipx:awscli-local" = "latest"
+gh = "2.87"
 
 [tasks.dev]
 description = "Start development server"
@@ -46,3 +51,101 @@ mise run build
 [tasks.docker]
 description = "Build and run with Docker Compose"
 run = "docker compose up --build"
+
+# --- LocalStack ---
+
+[tasks."localstack:up"]
+description = "Start LocalStack"
+run = "docker compose -f docker-compose.localstack.yml up -d"
+
+[tasks."localstack:down"]
+description = "Stop LocalStack"
+run = "docker compose -f docker-compose.localstack.yml down"
+
+[tasks."localstack:status"]
+description = "Check LocalStack health"
+run = "curl -s http://localhost:4566/_localstack/health | python -m json.tool"
+
+[tasks."localstack:bootstrap"]
+description = "Bootstrap Terraform state backend on LocalStack"
+run = """
+cd terraform/bootstrap && \
+terraform init && \
+terraform apply -auto-approve \
+  -var="use_localstack=true" \
+  -var="localstack_endpoint=http://localhost:4566" \
+  -var="environment=staging" && \
+terraform apply -auto-approve \
+  -var="use_localstack=true" \
+  -var="localstack_endpoint=http://localhost:4566" \
+  -var="environment=production"
+"""
+
+# --- Terraform (environment-scoped) ---
+
+[tasks."infra:init"]
+description = "Initialize Terraform for an environment (usage: mise run infra:init staging)"
+run = """
+ENV="${1:?Usage: mise run infra:init <staging|production>}"
+terraform -chdir=terraform/environments/$ENV init
+"""
+
+[tasks."infra:init:local"]
+description = "Initialize Terraform with LocalStack backend (usage: mise run infra:init:local staging)"
+run = """
+ENV="${1:?Usage: mise run infra:init:local <staging|production>}"
+terraform -chdir=terraform/environments/$ENV init -reconfigure -backend-config=backend.local.tfbackend
+"""
+
+[tasks."infra:plan"]
+description = "Plan Terraform changes (usage: mise run infra:plan staging)"
+run = """
+ENV="${1:?Usage: mise run infra:plan <staging|production>}"
+terraform -chdir=terraform/environments/$ENV plan
+"""
+
+[tasks."infra:plan:local"]
+description = "Plan against LocalStack (usage: mise run infra:plan:local staging)"
+run = """
+ENV="${1:?Usage: mise run infra:plan:local <staging|production>}"
+terraform -chdir=terraform/environments/$ENV plan -var-file=../../localstack.tfvars
+"""
+
+[tasks."infra:apply"]
+description = "Apply Terraform changes (usage: mise run infra:apply staging)"
+run = """
+ENV="${1:?Usage: mise run infra:apply <staging|production>}"
+terraform -chdir=terraform/environments/$ENV apply
+"""
+
+[tasks."infra:apply:local"]
+description = "Apply against LocalStack (usage: mise run infra:apply:local staging)"
+run = """
+ENV="${1:?Usage: mise run infra:apply:local <staging|production>}"
+terraform -chdir=terraform/environments/$ENV apply -var-file=../../localstack.tfvars
+"""
+
+[tasks."infra:destroy"]
+description = "Destroy Terraform resources (usage: mise run infra:destroy staging)"
+run = """
+ENV="${1:?Usage: mise run infra:destroy <staging|production>}"
+terraform -chdir=terraform/environments/$ENV destroy
+"""
+
+[tasks."infra:destroy:local"]
+description = "Destroy LocalStack resources (usage: mise run infra:destroy:local staging)"
+run = """
+ENV="${1:?Usage: mise run infra:destroy:local <staging|production>}"
+terraform -chdir=terraform/environments/$ENV destroy -var-file=../../localstack.tfvars
+"""
+
+[tasks."infra:fmt"]
+description = "Format all Terraform files"
+run = "terraform fmt -recursive terraform/"
+
+[tasks."infra:validate"]
+description = "Validate Terraform configuration (usage: mise run infra:validate staging)"
+run = """
+ENV="${1:?Usage: mise run infra:validate <staging|production>}"
+terraform -chdir=terraform/environments/$ENV validate
+"""
