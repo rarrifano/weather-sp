@@ -1,16 +1,11 @@
 import { RegenerateButton } from "@/components/regenerate-button";
 import { WeatherIcon } from "@/components/weather-icon";
+import type { WeatherData } from "@/lib/types";
+import { BG_CLASS_MAP, VIBE_MAP } from "@/lib/vibe-map";
+import { mapWeatherCodeToCondition } from "@/lib/weather-utils";
 
 // Force dynamic rendering at runtime (not build time)
 export const dynamic = "force-dynamic";
-
-type WeatherCondition = "rain" | "clear" | "clouds" | "thunderstorm" | "unknown";
-
-interface WeatherData {
-  condition: WeatherCondition;
-  vibe: string;
-  temp: number;
-}
 
 async function getWeather(): Promise<WeatherData> {
   const apiKey = process.env.OPENWEATHER_API_KEY;
@@ -50,30 +45,6 @@ async function getWeather(): Promise<WeatherData> {
     };
   }
 }
-
-function mapWeatherCodeToCondition(code: number): WeatherCondition {
-  if (code >= 200 && code < 300) return "thunderstorm";
-  if (code >= 300 && code < 600) return "rain";
-  if (code >= 800 && code < 801) return "clear";
-  if (code >= 801) return "clouds";
-  return "unknown";
-}
-
-const VIBE_MAP: Record<WeatherCondition, string> = {
-  rain: "Typical SP. Gray, wet, and miserable. Bring an umbrella or suffer.",
-  clear: "Wait, is that the sun? In São Paulo? Go outside before it disappears in 5 minutes.",
-  clouds: "The sky is a concrete slab. Very on-brand for the city.",
-  thunderstorm: "Maximum chaos mode. Stay inside and pray for the power grid.",
-  unknown: "Even the weather API doesn't know what's happening. Classic SP.",
-};
-
-const BG_CLASS_MAP: Record<WeatherCondition, string> = {
-  rain: "bg-rain",
-  clear: "bg-clear",
-  clouds: "bg-clouds",
-  thunderstorm: "bg-thunderstorm",
-  unknown: "bg-unknown",
-};
 
 export default async function Home() {
   const weather = await getWeather();
